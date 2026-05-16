@@ -406,9 +406,40 @@
         window.app = {
             login: async () => {
                 try {
-                    await signInWithPopup(auth, provider);
+                    // Intentar login con popup de Google
+                    const result = await signInWithPopup(auth, provider);
+                    const user = result.user;
+                    
+                    // Guardar información adicional del usuario en Firestore si es nuevo
+                    const userRef = doc(db, "users", user.uid);
+                    const userDoc = await getDoc(userRef);
+                    
+                    if (!userDoc.exists()) {
+                        await setDoc(userRef, {
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                            createdAt: new Date().toISOString(),
+                            leagues: []
+                        });
+                    }
+                    
+                    app.showToast("¡Bienvenido, " + user.displayName + "!");
                 } catch (error) {
-                    app.showToast("Error al iniciar sesión: " + error.message);
+                    console.error("Error de autenticación:", error);
+                    let errorMsg = "Error al iniciar sesión";
+                    
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMsg = "Ventana cerrada. Inténtalo de nuevo.";
+                    } else if (error.code === 'auth/network-request-failed') {
+                        errorMsg = "Error de conexión. Verifica tu internet.";
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        errorMsg = "Dominio no autorizado. Configúralo en Firebase Console.";
+                    } else {
+                        errorMsg += ": " + error.message;
+                    }
+                    
+                    app.showToast(errorMsg);
                 }
             },
 
