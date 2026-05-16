@@ -255,8 +255,9 @@
             <h1>Fantasy League</h1>
             <p>Gestiona tu liga privada</p>
         </div>
+        <input type="email" id="user-email-input" placeholder="Introduce tu email">
         <button class="btn btn-primary" onclick="app.login()">
-            <i class="fab fa-google"></i> Continuar con Google
+            Aceptar
         </button>
         <p style="margin-top: 20px; font-size: 12px; color: var(--secondary);">
             Al continuar aceptas los términos de uso.
@@ -407,61 +408,53 @@
         window.app = {
             login: async () => {
                 try {
-                    // Intentar login con popup de Google
-                    const result = await signInWithPopup(auth, provider);
-                    const user = result.user;
+                    // Obtener email del campo de texto
+                    const emailInput = document.getElementById('user-email-input');
+                    const email = emailInput.value.trim();
                     
-                    // Guardar información adicional del usuario en Firestore si es nuevo
-                    const userRef = doc(db, "users", user.uid);
-                    const userDoc = await getDoc(userRef);
-                    
-                    if (!userDoc.exists()) {
-                        await setDoc(userRef, {
-                            email: user.email,
-                            displayName: user.displayName,
-                            photoURL: user.photoURL,
-                            createdAt: new Date().toISOString(),
-                            leagues: []
-                        });
+                    if (!email) {
+                        app.showToast("Por favor, introduce un email");
+                        return;
                     }
                     
-                    app.showToast("¡Bienvenido, " + user.displayName + "!");
+                    // Validar formato básico de email
+                    if (!email.includes('@') || !email.includes('.')) {
+                        app.showToast("Email no válido");
+                        return;
+                    }
+                    
+                    // Crear usuario simulado con el email
+                    const pseudoUser = {
+                        uid: 'user_' + email.replace(/[^a-zA-Z0-9]/g, '_'),
+                        email: email,
+                        displayName: email.split('@')[0],
+                        photoURL: null
+                    };
+                    
+                    // Guardar en estado global
+                    window.appState.user = pseudoUser;
+                    
+                    // Ocultar login y mostrar home
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('home-view').classList.remove('hidden');
+                    
+                    app.showToast("¡Bienvenido, " + pseudoUser.displayName + "!");
+                    app.loadUserLeagues();
                 } catch (error) {
-                    console.error("Error de autenticación:", error);
-                    let errorMsg = "Error al iniciar sesión";
-                    
-                    if (error.code === 'auth/popup-closed-by-user') {
-                        errorMsg = "Ventana cerrada. Inténtalo de nuevo.";
-                    } else if (error.code === 'auth/network-request-failed') {
-                        errorMsg = "Error de conexión. Verifica tu internet.";
-                    } else if (error.code === 'auth/unauthorized-domain') {
-                        errorMsg = "Dominio no autorizado. Configúralo en Firebase Console.";
-                    } else {
-                        errorMsg += ": " + error.message;
-                    }
-                    
-                    app.showToast(errorMsg);
+                    console.error("Error de login:", error);
+                    app.showToast("Error al iniciar sesión: " + error.message);
                 }
             },
 
             logout: () => {
-                signOut(auth);
+                window.appState.user = null;
                 location.reload();
             },
 
             init: () => {
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        window.appState.user = user;
-                        document.getElementById('login-view').classList.add('hidden');
-                        document.getElementById('home-view').classList.remove('hidden');
-                        app.loadUserLeagues();
-                    } else {
-                        window.appState.user = null;
-                        document.getElementById('login-view').classList.remove('hidden');
-                        document.getElementById('home-view').classList.add('hidden');
-                    }
-                });
+                // Sin autenticación Firebase, solo mostrar login al inicio
+                document.getElementById('login-view').classList.remove('hidden');
+                document.getElementById('home-view').classList.add('hidden');
             },
 
             loadUserLeagues: () => {
