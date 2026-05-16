@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fantasy League Manager</title>
+    <!-- Iconos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Fuente -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Utilidades */
+        .hidden { display: none !important; }
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        /* Vistas */
+        .view {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login */
+        #login-view {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--surface);
+        }
+        .logo-area { margin-bottom: 40px; }
+        .logo-area i { font-size: 4rem; color: var(--primary); margin-bottom: 10px; }
+        
+        /* Home */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .league-card {
+            background: var(--surface);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .join-section {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        /* Dashboard Liga */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: var(--surface);
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Admin Panel */
+        .admin-controls {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-free { background: #dcfce7; color: #166534; }
+        .badge-team { background: #dbeafe; color: #1e40af; }
+
+        /* Draft */
+        .draft-turn {
+            text-align: center;
+            padding: 20px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* Mercado */
+        .auction-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .bid-input-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        /* Alineación */
+        .formation-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pos-slot {
+            aspect-ratio: 1;
+            background: var(--surface);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .pos-slot.filled {
+            border-style: solid;
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--surface);
+            width: 100%;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Notificaciones */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show { opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+    <!-- VISTA LOGIN -->
+    <div id="login-view" class="view">
+        <div class="logo-area">
+            <i class="fas fa-futbol"></i>
+            <h1>Fantasy League</h1>
+            <p>Gestiona tu liga privada</p>
+        </div>
+        <button class="btn btn-primary" onclick="app.login()">
+            <i class="fab fa-google"></i> Continuar con Google
+        </button>
+        <p style="margin-top: 20px; font-size: 12px; color: var(--secondary);">
+            Al continuar aceptas los términos de uso.
+        </p>
+    </div>
+
+    <!-- VISTA HOME GLOBAL -->
+    <div id="home-view" class="view hidden">
+        <div class="header">
+            <h2>Mis Ligas</h2>
+            <button class="btn btn-outline" style="width: auto;" onclick="app.logout()">Salir</button>
+        </div>
+
+        <div id="leagues-list">
+            <!-- Se llenará dinámicamente -->
+            <p style="text-align: center; color: var(--secondary); margin-top: 50px;">Cargando ligas...</p>
+        </div>
+
+        <div class="join-section">
+            <h3>¿Tienes un código?</h3>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="join-code-input" placeholder="Código de liga" style="margin:0;">
+                <button class="btn btn-primary" style="width: auto;" onclick="app.joinLeague()">Unirse</button>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <span>o</span>
+            </div>
+            <button class="btn btn-outline" style="margin-top: 10px;" onclick="app.showCreateModal()">Crear Nueva Liga</button>
+        </div>
+    </div>
+
+    <!-- VISTA DASHBOARD LIGA -->
+    <div id="league-view" class="view hidden">
+        <div class="header">
+            <button class="btn btn-outline" style="width: auto; padding: 5px 10px;" onclick="app.navigate('home-view')">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h3 id="league-title-display">Nombre Liga</h3>
+            <div style="width: 30px;"></div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="app.switchTab('standings')">Clasificación</div>
+            <div class="tab" onclick="app.switchTab('team')">Mi Equipo</div>
+            <div class="tab" onclick="app.switchTab('market')">Mercado</div>
+            <div class="tab" onclick="app.switchTab('admin')" id="tab-admin">Admin</div>
+        </div>
+
+        <!-- Contenido Pestañas -->
+        <div id="tab-standings" class="tab-content">
+            <h4>Clasificación General</h4>
+            <div id="standings-list" style="margin-top: 15px;"></div>
+        </div>
+
+        <div id="tab-team" class="tab-content hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4>Mi Plantilla</h4>
+                <span id="user-budget" class="badge badge-free">💰 0</span>
+            </div>
+            <div id="my-players-list" style="margin-top: 15px;"></div>
+            
+            <h4 style="margin-top: 20px;">Alineación Titular</h4>
+            <p style="font-size: 12px; color: var(--secondary);">Toca un jugador de tu plantilla para asignarlo</p>
+            <div class="formation-grid" id="formation-board">
+                <!-- Slots generados por JS -->
+            </div>
+            <button class="btn btn-primary" style="margin-top: 20px;" onclick="app.saveLineup()">Guardar Alineación</button>
+        </div>
+
+        <div id="tab-market" class="tab-content hidden">
+            <h4>Mercado de Fichajes</h4>
+            <p style="font-size: 12px; color: var(--secondary);">Subastas diarias. Puja más alta gana.</p>
+            <div id="market-list" style="margin-top: 15px;"></div>
+        </div>
+
+        <div id="tab-admin" class="tab-content hidden">
+            <div class="admin-controls">
+                <h4><i class="fas fa-crown"></i> Panel de Administrador</h4>
+                <p style="font-size: 12px; margin-bottom: 10px;">Tienes control total sobre esta liga.</p>
+                
+                <button class="btn btn-outline" style="margin-bottom: 5px;" onclick="admin.addPlayerPrompt()">+ Crear Jugador Ficticio</button>
+                <button class="btn btn-outline" style="margin-bottom: 5px;" onclick="admin.createJornada()">+ Nueva Jornada</button>
+                <button class="btn btn-outline" style="margin-bottom: 5px;" onclick="admin.startDraft()">Iniciar Draft</button>
+                <button class="btn btn-danger" style="margin-top: 10px;" onclick="admin.deleteLeague()">🗑️ Eliminar Liga</button>
+            </div>
+
+            <h4>Gestionar Eventos (Jornada Activa)</h4>
+            <select id="admin-jornada-select" onchange="admin.loadJornadaEvents()"></select>
+            <div id="admin-events-list" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR LIGA -->
+    <div id="create-league-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Crear Nueva Liga</h3>
+            <input type="text" id="new-league-name" placeholder="Nombre de la liga">
+            <label style="font-size: 12px; color: var(--secondary);">Presupuesto Inicial por Usuario</label>
+            <input type="number" id="new-league-budget" value="1000">
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-outline" onclick="document.getElementById('create-league-modal').classList.add('hidden')">Cancelar</button>
+                <button class="btn btn-primary" onclick="app.createLeague()">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">Mensaje</div>
+
+    <!-- FIREBASE & APP LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, getDoc, updateDoc, onSnapshot, query, where, arrayUnion, arrayRemove, increment, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // ==========================================
+        // CONFIGURACIÓN FIREBASE (REEMPLAZAR ESTO)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY_AQUI",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO_ID",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "NUMEROS",
+            appId: "1:NUMEROS:web:HASH"
+        };
+
+        // Inicializar Firebase
+        const appFirebase = initializeApp(firebaseConfig);
+        const auth = getAuth(appFirebase);
+        const db = getFirestore(appFirebase);
+        const provider = new GoogleAuthProvider();
+
+        // ==========================================
+        // ESTADO GLOBAL DE LA APP
+        // ==========================================
+        window.appState = {
+            user: null,
+            currentLeagueId: null,
+            leagues: [],
+            currentLeagueData: null,
+            unsubscribeLeague: null
+        };
+
+        // ==========================================
+        // LÓGICA PRINCIPAL (APP)
+        // ==========================================
+        window.app = {
+            login: async () => {
+                try {
+                    await signInWithPopup(auth, provider);
+                } catch (error) {
+                    app.showToast("Error al iniciar sesión: " + error.message);
+                }
+            },
+
+            logout: () => {
+                signOut(auth);
+                location.reload();
+            },
+
+            init: () => {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.appState.user = user;
+                        document.getElementById('login-view').classList.add('hidden');
+                        document.getElementById('home-view').classList.remove('hidden');
+                        app.loadUserLeagues();
+                    } else {
+                        window.appState.user = null;
+                        document.getElementById('login-view').classList.remove('hidden');
+                        document.getElementById('home-view').classList.add('hidden');
+                    }
+                });
+            },
+
+            loadUserLeagues: () => {
+                if (!window.appState.user) return;
+                const q = query(collection(db, "leagues"), where("members", "array-contains", window.appState.user.uid));
+                
+                onSnapshot(q, (snapshot) => {
+                    const list = document.getElementById('leagues-list');
+                    list.innerHTML = '';
+                    window.appState.leagues = [];
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        window.appState.leagues.push({ id: doc.id, ...data });
+                        
+                        const div = document.createElement('div');
+                        div.className = 'league-card';
+                        div.innerHTML = `
+                            <div>
+                                <strong>${data.name}</strong><br>
+                                <small style="color:var(--secondary)">Admin: ${data.adminName}</small>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color:var(--border)"></i>
+                        `;
+                        div.onclick = () => app.enterLeague(doc.id);
+                        list.appendChild(div);
+                    });
+
+                    if (window.appState.leagues.length === 0) {
+                        list.innerHTML = '<p style="text-align:center; color:var(--secondary); margin-top:20px;">No estás en ninguna liga.</p>';
+                    }
+                });
+            },
+
+            createLeague: async () => {
+                const name = document.getElementById('new-league-name').value;
+                const budget = parseInt(document.getElementById('new-league-budget').value);
+                if (!name) return app.showToast("Nombre requerido");
+
+                try {
+                    const leagueRef = await addDoc(collection(db, "leagues"), {
+                        name: name,
+                        adminId: window.appState.user.uid,
+                        adminName: window.appState.user.displayName,
+                        members: [window.appState.user.uid],
+                        budgetInitial: budget,
+                        code: Math.random().toString(36).substring(2, 8).toUpperCase(), // Código corto
+                        createdAt: new Date(),
+                        status: 'draft', // draft, active, finished
+                        formation: { GK: 1, DEF: 4, MID: 4, FWD: 2 } // Default
+                    });
+
+                    // Crear equipo para el admin
+                    await setDoc(doc(db, "teams", `${leagueRef.id}_${window.appState.user.uid}`), {
+                        leagueId: leagueRef.id,
+                        userId: window.appState.user.uid,
+                        userName: window.appState.user.displayName,
+                        budget: budget,
+                        players: [], // IDs de jugadores
+                        lineup: {}, // { GK: playerId, DEF: [ids]... }
+                        points: 0,
+                        wins: 0,
+                        draws: 0,
+                        losses: 0
+                    });
+
+                    document.getElementById('create-league-modal').classList.add('hidden');
+                    document.getElementById('new-league-name').value = '';
+                    app.showToast("Liga creada con éxito");
+                } catch (e) {
+                    console.error(e);
+                    app.showToast("Error creando liga");
+                }
+            },
+
+            joinLeague: async () => {
+                const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+                if (!code) return;
+
+                // Buscar liga por código (Nota: En prod usar índice, aquí filtramos en cliente para simplicidad del ejemplo o usamos query)
+                // Para simplificar sin índices complejos en este demo, asumimos que el usuario tiene el ID o hacemos una búsqueda.
+                // MEJORA: Usaremos una colección de códigos o buscaremos. 
+                // Para este ejemplo funcional, haremos una query donde code == code.
+                
+                const q = query(collection(db, "leagues"), where("code", "==", code));
+                const snapshot = await getDoc(q); // getDocs en realidad
+                
+                // Corrección: getDocs para queries
+                const querySnapshot = await (async () => {
+                    const { getDocs } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+                    return getDocs(q);
+                })();
+
+                if (querySnapshot.empty) {
+                    return app.showToast("Código no válido");
+                }
+
+                const leagueDoc = querySnapshot.docs[0];
+                const leagueId = leagueDoc.id;
+                const leagueData = leagueDoc.data();
+
+                if (leagueData.members.includes(window.appState.user.uid)) {
+                    return app.showToast("Ya estás en esta liga");
+                }
+
+                // Unir usuario
+                const teamId = `${leagueId}_${window.appState.user.uid}`;
+                
+                try {
+                    await updateDoc(doc(db, "leagues", leagueId), {
+                        members: arrayUnion(window.appState.user.uid)
+                    });
+
+                    await setDoc(doc(db, "teams", teamId), {
+                        leagueId: leagueId,
+                        userId: window.appState.user.uid,
+                        userName: window.appState.user.displayName,
+                        budget: leagueData.budgetInitial,
+                        players: [],
+                        lineup: {},
+                        points: 0,
+                        wins: 0, draws: 0, losses: 0
+                    });
+
+                    app.showToast("¡Te has unido a la liga!");
+                    document.getElementById('join-code-input').value = '';
+                } catch (e) {
+                    app.showToast("Error al unirse: " + e.message);
+                }
+            },
+
+            enterLeague: (leagueId) => {
+                window.appState.currentLeagueId = leagueId;
+                document.getElementById('home-view').classList.add('hidden');
+                document.getElementById('league-view').classList.remove('hidden');
+                
+                // Suscribirse a cambios en tiempo real de la liga
+                const { onSnapshot, doc } = requireFirebase(); // Helper mock
+                // Real implementation:
+                window.appState.unsubscribeLeague = onSnapshot(doc(db, "leagues", leagueId), (doc) => {
+                    window.appState.currentLeagueData = { id: doc.id, ...doc.data() };
+                    document.getElementById('league-title-display').innerText = doc.data().name;
+                    
+                    // Renderizar contenido según pestaña activa
+                    const activeTab = document.querySelector('.tab.active').getAttribute('onclick').split("'")[1];
+                    app.switchTab(activeTab, true); 
+                });
+
+                // Cargar equipos para clasificación
+                app.loadStandings();
+            },
+
+            leaveLeagueView: () => {
+                if (window.appState.unsubscribeLeague) window.appState.unsubscribeLeague();
+                document.getElementById('league-view').classList.add('hidden');
+                document.getElementById('home-view').classList.remove('hidden');
+                window.appState.currentLeagueId = null;
+            },
+
+            switchTab: (tabName, force = false) => {
+                // UI Tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                event && event.target.classList.add('active'); // Si viene de click
+                
+                // Hide all contents
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                // Show target
+                document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+                if (!window.appState.currentLeagueId) return;
+
+                if (tabName === 'standings') app.loadStandings();
+                if (tabName === 'team') app.loadMyTeam();
+                if (tabName === 'market') app.loadMarket();
+                if (tabName === 'admin') admin.initAdminPanel();
+            },
+
+            loadStandings: async () => {
+                const { query, collection, where, getDocs, orderBy } = requireFirebase();
+                const q = query(collection(db, "teams"), where("leagueId", "==", window.appState.currentLeagueId), orderBy("points", "desc"));
+                const snapshot = await getDocs(q);
+                
+                const list = document.getElementById('standings-list');
+                list.innerHTML = '';
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const t = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'player-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-weight:bold; color:var(--secondary);">#${rank++}</span>
+                            <div>
+                                <div style="font-weight:600;">${t.userName}</div>
+                                <div style="font-size:12px; color:var(--secondary);">${t.points} pts</div>
+                            </div>
+                        </div>
+                        <div style="font-size:12px; color:var(--secondary);">
+                            ${t.wins}G ${t.draws}E ${t.losses}P
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            },
+
+            loadMyTeam: async () => {
+                const { doc, getDoc } = requireFirebase();
+                const teamId = `${window.appState.currentLeagueId}_${window.appState.user.uid}`;
+                const teamSnap = await getDoc(doc(db, "teams", teamId));
+                
+                if (!teamSnap.exists()) return;
+                const team = teamSnap.data();
+                
+                document.getElementById('user-budget').innerText = `💰 ${team.budget}`;
+                
+                // Cargar detalles de jugadores
+                const playersList = document.getElementById('my-players-list');
+                playersList.innerHTML = '';
+                
+                if (team.players.length === 0) {
+                    playersList.innerHTML = '<p style="text-align:center; padding:20px;">No tienes jugadores. Espera al Draft o compra en el mercado.</p>';
+                } else {
+                    // Fetch players details (simplified: in real app batch get)
+                    // Para este demo, iteramos. En prod usar getAll.
+                    const { collection, getDocs, query, where } = requireFirebase();
+                    // Nota: Esto puede ser ineficiente si hay muchos jugadores, pero ok para <100
+                    // Mejor: Guardar nombre del jugador en el equipo o tener un mapa global.
+                    // Aquí asumimos que cargamos todos los jugadores de la liga y filtramos.
+                    const allPlayersSnap = await getDocs(query(collection(db, "players"), where("leagueId", "==", window.appState.currentLeagueId)));
+                    const allPlayers = {};
+                    allPlayersSnap.forEach(d => allPlayers[d.id] = d.data());
+
+                    team.players.forEach(pid => {
+                        const p = allPlayers[pid];
+                        if(p) {
+                            const div = document.createElement('div');
+                            div.className = 'player-item';
+                            div.innerHTML = `
+                                <div>
+                                    <strong>${p.name}</strong> <span class="badge badge-team">${p.position}</span>
+                                </div>
+                                <div style="font-size:12px;">Pts: ${p.totalPoints || 0}</div>
+                            `;
+                            // Click para alinear
+                            div.onclick = () => app.selectForLineup(pid, p.position);
+                            playersList.appendChild(div);
+                        }
+                    });
+                }
+
+                app.renderFormationBoard(team.lineup || {});
+            },
+
+            renderFormationBoard: (currentLineup) => {
+                const board = document.getElementById('formation-board');
+                board.innerHTML = '';
+                const formation = window.appState.currentLeagueData.formation || { GK:1, DEF:4, MID:4, FWD:2 };
+                
+                ['GK', 'DEF', 'MID', 'FWD'].forEach(pos => {
+                    const count = formation[pos];
+                    for(let i=0; i<count; i++) {
+                        const slotId = `${pos}_${i}`;
+                        const playerId = currentLineup[slotId];
+                        
+                        const slot = document.createElement('div');
+                        slot.className = `pos-slot ${playerId ? 'filled' : ''}`;
+                        slot.innerText = playerId ? '...' : pos;
+                        slot.dataset.slot = slotId;
+                        slot.dataset.pos = pos;
+                        
+                        if (playerId) {
+                            // Fetch name briefly
+                            getDoc(doc(db, "players", playerId)).then(s => {
+                                if(s.exists()) slot.innerText = s.data().name.substring(0, 8);
+                            });
+                            slot.onclick = () => app.removeFromLineup(slotId);
+                        } else {
+                            slot.onclick = () => app.openPlayerSelector(pos);
+                        }
+                        board.appendChild(slot);
+                    }
+                });
+            },
+
+            selectedTempPlayer: null,
+            selectForLineup: (pid, pos) => {
+                app.selectedTempPlayer = { id: pid, pos: pos };
+                app.showToast("Toca un hueco en la formación para colocar");
+            },
+
+            addToLineup: (slotId, pos) => {
+                if (!app.selectedTempPlayer) return;
+                if (app.selectedTempPlayer.pos !== pos) {
+                    app.showToast("Posición incorrecta");
+                    return;
+                }
+                
+                // Actualizar estado local temporalmente hasta guardar
+                const teamId = `${window.appState.currentLeagueId}_${window.appState.user.uid}`;
+                const updates = {};
+                updates[`lineup.${slotId}`] = app.selectedTempPlayer.id;
+                
+                updateDoc(doc(db, "teams", teamId), updates);
+                app.selectedTempPlayer = null;
+                app.loadMyTeam();
+            },
+
+            removeFromLineup: (slotId) => {
+                const teamId = `${window.appState.currentLeagueId}_${window.appState.user.uid}`;
+                const updates = {};
+                updates[`lineup.${slotId}`] = null;
+                updateDoc(doc(db, "teams", teamId), updates);
+                app.loadMyTeam();
+            },
+
+            saveLineup: () => {
+                app.showToast("Alineación guardada automáticamente");
+            },
+
+            loadMarket: async () => {
+                const { collection, query, where, getDocs, orderBy } = requireFirebase();
+                // Jugadores en mercado
+                const q = query(collection(db, "players"), where("leagueId", "==", window.appState.currentLeagueId), where("status", "==", "market"));
+                const snapshot = await getDocs(q);
+                
+                const list = document.getElementById('market-list');
+                list.innerHTML = '';
+                
+                if(snapshot.empty) {
+                    list.innerHTML = '<p style="text-align:center; color:var(--secondary);">No hay jugadores en el mercado ahora.</p>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'auction-card';
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>${p.name}</strong>
+                            <span class="badge badge-free">${p.position}</span>
+                        </div>
+                        <div style="font-size:12px; color:var(--secondary); margin: 5px 0;">
+                            Puja actual: 💰 ${p.currentBid || 0} (por ${p.highestBidderName || 'Nadie'})
+                        </div>
+                        <div class="bid-input-group">
+                            <input type="number" id="bid-${doc.id}" placeholder="Tu puja" style="margin:0;">
+                            <button class="btn btn-primary" style="width:auto;" onclick="app.placeBid('${doc.id}', ${p.currentBid || 0})">Pujar</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            },
+
+            placeBid: async (playerId, currentBid) => {
+                const amount = parseInt(document.getElementById(`bid-${playerId}`).value);
+                if (!amount || amount <= currentBid) return app.showToast("Puja inválida");
+
+                const teamId = `${window.appState.currentLeagueId}_${window.appState.user.uid}`;
+                const teamRef = doc(db, "teams", teamId);
+                const teamSnap = await getDoc(teamRef);
+                const budget = teamSnap.data().budget;
+
+                if (amount > budget) return app.showToast("Sin suficiente dinero");
+
+                // Transacción simple (en prod usar runTransaction)
+                await updateDoc(doc(db, "players", playerId), {
+                    currentBid: amount,
+                    highestBidder: window.appState.user.uid,
+                    highestBidderName: window.appState.user.displayName,
+                    bidTime: new Date()
+                });
+                
+                app.showToast("Puja realizada");
+                app.loadMarket();
+            },
+
+            openPlayerSelector: (pos) => {
+                // Implementar modal para elegir jugador de la lista para ese hueco
+                // Simplificado: ya se hace click en lista -> click en hueco
+            },
+
+            navigate: (viewId) => {
+                if(viewId === 'home-view') app.leaveLeagueView();
+            },
+
+            showToast: (msg) => {
+                const t = document.getElementById('toast');
+                t.innerText = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 3000);
+            },
+            
+            showCreateModal: () => {
+                document.getElementById('create-league-modal').classList.remove('hidden');
+            }
+        };
+
+        // ==========================================
+        // LÓGICA DE ADMINISTRADOR
+        // ==========================================
+        window.admin = {
+            initAdminPanel: async () => {
+                const league = window.appState.currentLeagueData;
+                if (!league || league.adminId !== window.appState.user.uid) {
+                    document.getElementById('tab-admin').innerHTML = "<p>Solo el administrador puede ver esto.</p>";
+                    return;
+                }
+                
+                // Cargar jornadas para selector
+                const { collection, query, where, getDocs, orderBy } = requireFirebase();
+                const q = query(collection(db, "jornadas"), where("leagueId", "==", window.appState.currentLeagueId), orderBy("number", "desc"));
+                const snaps = await getDocs(q);
+                
+                const select = document.getElementById('admin-jornada-select');
+                select.innerHTML = '<option value="">Selecciona Jornada</option>';
+                snaps.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.innerText = `Jornada ${d.data().number}`;
+                    select.appendChild(opt);
+                });
+            },
+
+            addPlayerPrompt: async () => {
+                const name = prompt("Nombre del jugador ficticio:");
+                if (!name) return;
+                const pos = prompt("Posición (GK, DEF, MID, FWD):").toUpperCase();
+                const val = parseInt(prompt("Valor inicial:", "100"));
+
+                await addDoc(collection(db, "players"), {
+                    leagueId: window.appState.currentLeagueId,
+                    name: name,
+                    position: pos,
+                    value: val,
+                    status: 'free', // free, team, market
+                    totalPoints: 0,
+                    currentBid: 0
+                });
+                app.showToast("Jugador creado");
+            },
+
+            createJornada: async () => {
+                const num = prompt("Número de jornada:");
+                await addDoc(collection(db, "jornadas"), {
+                    leagueId: window.appState.currentLeagueId,
+                    number: parseInt(num),
+                    status: 'open', // open, closed
+                    events: [] // { playerId, type, value, points }
+                });
+                app.showToast("Jornada creada");
+                admin.initAdminPanel();
+            },
+
+            startDraft: async () => {
+                if(!confirm("¿Iniciar Draft? Esto bloqueará el mercado hasta terminar.")) return;
+                await updateDoc(doc(db, "leagues", window.appState.currentLeagueId), {
+                    status: 'draft_active'
+                });
+                app.showToast("Draft iniciado. Los usuarios deben estar online.");
+            },
+
+            deleteLeague: async () => {
+                if(!confirm("¿ESTÁS SEGURO? Esto borrará la liga permanentemente.")) return;
+                // En una app real, usar Cloud Functions para borrar subcolecciones.
+                // Aquí solo marcamos como eliminada o borramos doc principal.
+                await updateDoc(doc(db, "leagues", window.appState.currentLeagueId), {
+                    deleted: true
+                });
+                alert("Liga eliminada (simulado)");
+                app.navigate('home-view');
+            },
+
+            loadJornadaEvents: async () => {
+                const jId = document.getElementById('admin-jornada-select').value;
+                if (!jId) return;
+                
+                const list = document.getElementById('admin-events-list');
+                list.innerHTML = 'Cargando jugadores...';
+                
+                // Cargar jugadores de la liga
+                const { collection, query, where, getDocs } = requireFirebase();
+                const pSnap = await getDocs(query(collection(db, "players"), where("leagueId", "==", window.appState.currentLeagueId)));
+                
+                list.innerHTML = '';
+                pSnap.forEach(pDoc => {
+                    const p = pDoc.data();
+                    const row = document.createElement('div');
+                    row.className = 'player-item';
+                    row.style.flexDirection = 'column';
+                    row.style.alignItems = 'flex-start';
+                    row.innerHTML = `
+                        <div style="width:100%; display:flex; justify-content:space-between;">
+                            <strong>${p.name} (${p.position})</strong>
+                        </div>
+                        <div style="display:flex; gap:5px; margin-top:5px; width:100%;">
+                            <button class="btn btn-outline" style="padding:5px; font-size:10px;" onclick="admin.addEvent('${pDoc.id}', 'gol', 10)">⚽ Gol (+10)</button>
+                            <button class="btn btn-outline" style="padding:5px; font-size:10px;" onclick="admin.addEvent('${pDoc.id}', 'assist', 5)">👟 Asist (+5)</button>
+                            <button class="btn btn-outline" style="padding:5px; font-size:10px;" onclick="admin.addEvent('${pDoc.id}', 'yellow', -2)">🟨 Amarilla (-2)</button>
+                            <button class="btn btn-outline" style="padding:5px; font-size:10px;" onclick="admin.addCustomEvent('${pDoc.id}')">✨ Custom</button>
+                        </div>
+                    `;
+                    list.appendChild(row);
+                });
+            },
+
+            addEvent: async (playerId, type, points) => {
+                const jId = document.getElementById('admin-jornada-select').value;
+                // Añadir evento a la jornada
+                const jRef = doc(db, "jornadas", jId);
+                await updateDoc(jRef, {
+                    events: arrayUnion({
+                        playerId: playerId,
+                        type: type,
+                        points: points,
+                        timestamp: new Date()
+                    })
+                });
+                
+                // Actualizar puntos totales del jugador
+                const pRef = doc(db, "players", playerId);
+                await updateDoc(pRef, {
+                    totalPoints: increment(points)
+                });
+                
+                app.showToast(`Evento ${type} añadido`);
+                // Recalcular clasificación podría hacerse aquí o via Cloud Function
+            },
+
+            addCustomEvent: async (playerId) => {
+                const pts = parseInt(prompt("Puntos (negativo para restar):"));
+                const desc = prompt("Descripción del evento:");
+                if (pts) admin.addEvent(playerId, desc, pts);
+            }
+        };
+
+        // Helper para importar funciones de firebase dinámicamente si es necesario
+        function requireFirebase() {
+            return {
+                collection: collection,
+                doc: doc,
+                addDoc: addDoc,
+                setDoc: setDoc,
+                getDoc: getDoc,
+                getDocs: getDocs,
+                updateDoc: updateDoc,
+                query: query,
+                where: where,
+                orderBy: orderBy,
+                arrayUnion: arrayUnion,
+                arrayRemove: arrayRemove,
+                increment: increment,
+                onSnapshot: onSnapshot
+            };
+        }
+
+        // Iniciar App
+        window.app.init();
+
+    </script>
+</body>
+</html>
